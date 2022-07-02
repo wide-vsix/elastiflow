@@ -1,0 +1,83 @@
+version: "3"
+services:
+  elastiflow-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.1
+    restart: always
+    ports:
+    - 9200:9200/tcp
+    volumes:
+    - ./volumes/:/usr/share/elasticsearch/data
+    environment:
+      ES_JAVA_OPTS: '-Xms2g -Xmx2g'
+      cluster.name: elastiflow
+      node.name: NODE_NAME
+      bootstrap.memory_lock: 'true'
+      network.bind_host: 0.0.0.0
+      network.publish_host: 192.0.2.11
+      http.port: 9200
+      http.publish_port: 9200
+      discovery.type: 'single-node'
+      indices.query.bool.max_clause_count: 8192
+      search.max_buckets: 250000
+      action.destructive_requires_name: 'true'
+      reindex.remote.whitelist: '*:*'
+      reindex.ssl.verification_mode: 'none'
+  elastiflow-kibana:
+    image: docker.elastic.co/kibana/kibana:7.13.1
+    restart: always
+    hostname: NODE_NAME
+    ports:
+    - 5601:5601/tcp
+    environment:
+      TELEMETRY_OPTIN: 'false'
+      TELEMETRY_ENABLED: 'false'
+      NEWSFEED_ENABLED: 'false'
+      SERVER_NAME: 'NODE_NAME'
+      SERVER_HOST: '0.0.0.0'
+      SERVER_PORT: 5601
+      SERVER_MAXPAYLOADBYTES: 8388608
+      ELASTICSEARCH_HOSTS: 'http://elastiflow-elasticsearch:9200'
+      ELASTICSEARCH_REQUESTTIMEOUT: 132000
+      ELASTICSEARCH_SHARDTIMEOUT: 120000
+      ELASTICSEARCH_SSL_VERIFICATIONMODE: 'none' 
+      KIBANA_AUTOCOMPLETETIMEOUT: 3000
+      KIBANA_AUTOCOMPLETETERMINATEAFTER: 2500000
+      VIS_TYPE_VEGA_ENABLEEXTERNALURLS: 'true'
+      XPACK_MAPS_SHOWMAPVISUALIZATIONTYPES: 'true'
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: 'ElastiFlow_0123456789_0123456789_0123456789'
+  flow-collector:
+    image: elastiflow/flow-collector:5.5.2
+    container_name: flow-collector
+    restart: 'unless-stopped'
+    ports:
+    - 9995:9995/udp
+    - 2055:2055/udp
+    - 6343:6343/udp
+    - 4739:4739/udp
+    volumes:
+      - /etc/elastiflow:/etc/elastiflow
+    environment:
+      EF_FLOW_LOGGER_LEVEL: 'debug'
+      EF_FLOW_LOGGER_FILE_LOG_ENABLE: 'true'
+      EF_FLOW_LOGGER_FILE_LOG_FILENAME: '/var/log/elastiflow/flowcoll/flowcoll.log'
+      EF_FLOW_SERVER_UDP_IP: '0.0.0.0'
+      EF_FLOW_SERVER_UDP_PORT: 9995,2055,6343,4739
+      EF_FLOW_DECODER_ENRICH_IPADDR_METADATA_ENABLE: 'false'
+      EF_FLOW_DECODER_ENRICH_DNS_ENABLE: 'false'
+      EF_FLOW_DECODER_ENRICH_DNS_NAMESERVER_IP: ''
+      EF_FLOW_DECODER_ENRICH_DNS_NAMESERVER_TIMEOUT: 3000
+      EF_FLOW_DECODER_ENRICH_MAXMIND_ASN_ENABLE: 'false'
+      EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_ENABLE: 'false'
+      EF_FLOW_DECODER_ENRICH_RISKIQ_ASN_ENABLE: 'false'
+      EF_FLOW_DECODER_ENRICH_RISKIQ_THREAT_ENABLE: 'false'
+      EF_FLOW_DECODER_ENRICH_NETIF_FLOW_OPTIONS_ENABLE: 'true'
+      EF_FLOW_DECODER_ENRICH_NETIF_SNMP_ENABLE: 'false'
+      EF_FLOW_DECODER_ENRICH_NETIF_SNMP_COMMUNITIES: 'public'
+      EF_FLOW_OUTPUT_ELASTICSEARCH_ENABLE: 'true'
+      EF_FLOW_OUTPUT_ELASTICSEARCH_ECS_ENABLE: 'false'
+      EF_FLOW_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_SHARDS: 1
+      EF_FLOW_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_REPLICAS: 0
+      EF_FLOW_OUTPUT_ELASTICSEARCH_ADDRESSES: 'elastiflow-elasticsearch:9200'
+      EF_FLOW_OUTPUT_ELASTICSEARCH_TLS_ENABLE: 'false'
+      EF_FLOW_OUTPUT_ELASTICSEARCH_TLS_SKIP_VERIFICATION: 'false'
+      EF_FLOW_OUTPUT_ELASTICSEARCH_TLS_CA_CERT_FILEPATH: ''
