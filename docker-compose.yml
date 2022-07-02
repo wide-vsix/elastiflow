@@ -45,17 +45,17 @@ services:
       VIS_TYPE_VEGA_ENABLEEXTERNALURLS: 'true'
       XPACK_MAPS_SHOWMAPVISUALIZATIONTYPES: 'true'
       XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: 'ElastiFlow_0123456789_0123456789_0123456789'
-  flow-collector:
+  elastiflow-flow-collector:
     image: elastiflow/flow-collector:5.5.2
     container_name: flow-collector
-    restart: 'unless-stopped'
+    restart: always
     ports:
     - 9995:9995/udp
     - 2055:2055/udp
     - 6343:6343/udp
     - 4739:4739/udp
     volumes:
-      - /etc/elastiflow:/etc/elastiflow
+    - /etc/elastiflow:/etc/elastiflow
     environment:
       EF_FLOW_LOGGER_LEVEL: 'debug'
       EF_FLOW_LOGGER_FILE_LOG_ENABLE: 'true'
